@@ -14,12 +14,15 @@ param([switch]$SkipAdminCheck)
 $script:VTKeyPath = Join-Path $env:APPDATA "IOC-Scanner\vt_key.dat"
 $script:VTKeySalt = Join-Path $env:APPDATA "IOC-Scanner\vt_salt.dat"
 
+Add-Type -AssemblyName System.Security
+
 function Save-VTKey {
     param([string]$ApiKey)
     $dir = Split-Path $script:VTKeyPath -Parent
     if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    $rng = [System.Security.Cryptography.RNGCryptoServiceProvider]::new()
     $salt = New-Object byte[] 16
-    [System.Security.Cryptography.RandomNumberGenerator]::Fill($salt)
+    $rng.GetBytes($salt)
     [System.IO.File]::WriteAllBytes($script:VTKeySalt, $salt)
     $encKey = [System.Text.Encoding]::UTF8.GetBytes($ApiKey)
     $encrypted = [System.Security.Cryptography.ProtectedData]::Protect($encKey, $salt, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)
